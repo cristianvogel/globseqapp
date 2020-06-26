@@ -1,26 +1,26 @@
 #pragma once
 
 #include "IPlug_include_in_plug_hdr.h"
-
+#include "IPlugOSC.h"
 
 const int kNumPresets = 1;
 
 enum EParams
 {
-  kGain = 0,
+  kBPM = 0,
   kNumParams
 };
 
 using namespace iplug;
 using namespace igraphics;
 
-class GlobSeqPlugIn final : public Plugin
+class GlobSeqPlugIn final : public Plugin, public OSCSender
 {
 public:
   GlobSeqPlugIn(const InstanceInfo& info);
   ~GlobSeqPlugIn();
   
-  std::string beSlimeName = "";
+  std::string beSlimeName = "◌ Looking for beslime...";
   std::string beSlimeIP = "";
   
 #if IPLUG_DSP // http://bit.ly/2S64BDd

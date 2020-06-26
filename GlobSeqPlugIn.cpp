@@ -8,6 +8,7 @@
 
 GlobSeqPlugIn::GlobSeqPlugIn(const InstanceInfo& info)
 : Plugin(info, MakeConfig(kNumParams, kNumPresets))
+, OSCSender("127.0.0.1", 8000)
 {
 
     std::cout << std::endl << "Tiny-Process looks for BeSlime" << std::endl;
@@ -24,9 +25,9 @@ GlobSeqPlugIn::GlobSeqPlugIn(const InstanceInfo& info)
 
               while(std::getline(ss,line,'\n')){
                 if(line.find("beslime") != std::string::npos) {
-                  const auto beslimeId = line.substr(line.find("beslime") + 8,3);
+                  auto beslimeId = line.substr(line.find("beslime") + 8,3);
+                  auto hardwareName = "beslime-" + beslimeId;
                   std::cout << "ID: " << beslimeId << std::endl;
-                  const auto hardwareName = "beslime-" + beslimeId;
                   beSlimeName = hardwareName;
                 }
               }
@@ -34,8 +35,7 @@ GlobSeqPlugIn::GlobSeqPlugIn(const InstanceInfo& info)
     });
     slimeThread.detach();
   
-   
-  GetParam(kGain)->InitDouble("Gain", 0., 0., 100.0, 0.01, "%");
+  GetParam(kBPM)->InitDouble("BPM", 0., 0., 1000.0, 0.5, "bpm");
 
 #if IPLUG_EDITOR // http://bit.ly/2S64BDd
   mMakeGraphicsFunc = [&]() {
@@ -47,10 +47,27 @@ GlobSeqPlugIn::GlobSeqPlugIn(const InstanceInfo& info)
     pGraphics->AttachPanelBackground(COLOR_GRAY);
     pGraphics->LoadFont("Roboto-Regular", ROBOTO_FN);
     const IRECT b = pGraphics->GetBounds();
-    pGraphics->AttachControl(new ITextControl(b.GetMidVPadded(50), beSlimeName.c_str(), IText(50)));
-    pGraphics->AttachControl(new IVKnobControl(b.GetCentredInside(100).GetVShifted(-100), kGain));
+    //▼ label
+    pGraphics->AttachControl
+              (new ITextControl(b.GetMidVPadded(50), beSlimeName.c_str(), IText(50)));
+    
+    //▼ the right way to make a dial with a paramIdx and ActionFunction
+    // in this case an OSC message sending float
+    pGraphics->AttachControl
+              (new IVKnobControl(
+                                 b.GetCentredInside(100).GetVShifted(-100),
+                                 kBPM)
+              )->SetActionFunction([this](IControl* pCaller) {
+                                     pCaller->SetParamIdx(kBPM);
+                                     OscMessageWrite msg;
+                                     msg.PushWord("/bpm");
+                                     msg.PushFloatArg(pCaller->GetValue());
+                                     SendOSCMessage(msg);
+                                  }
+                        );
   };
   
+  std::cout << "Slimer->" + beSlimeName << std::endl;
     
 #endif
     
@@ -65,12 +82,12 @@ GlobSeqPlugIn::~GlobSeqPlugIn(){
 #if IPLUG_DSP
 void GlobSeqPlugIn::ProcessBlock(sample** inputs, sample** outputs, int nFrames)
 {
-  const double gain = GetParam(kGain)->Value() / 100.;
+
   const int nChans = NOutChansConnected();
   
   for (int s = 0; s < nFrames; s++) {
     for (int c = 0; c < nChans; c++) {
-      outputs[c][s] = inputs[c][s] * gain;
+      outputs[c][s] = inputs[c][s] * 0.0; // mute
     }
   }
 }
