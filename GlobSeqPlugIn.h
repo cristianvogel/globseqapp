@@ -7,14 +7,14 @@ const int kNumPresets = 1;
 
 enum EParams
 {
-  kBPM = 0,
+  kCntrlTagBPM = 0,
   kNumParams
 };
 
 using namespace iplug;
 using namespace igraphics;
 
-class GlobSeqPlugIn final : public Plugin, public OSCSender
+class GlobSeqPlugIn final : public Plugin //public OSCSender
 {
 public:
   GlobSeqPlugIn(const InstanceInfo& info);
@@ -28,7 +28,10 @@ public:
   
   //I tried creating an OSCSender object on the heap
   //but i don't understand how to change its sending destination
-  OSCSender *oscSender = new OSCSender();
+  std::unique_ptr<OSCSender> oscSender;
+  
+private:
+  void launchNetworkingThreads();
   
 #if IPLUG_DSP // http://bit.ly/2S64BDd
   void ProcessBlock(sample** inputs, sample** outputs, int nFrames) override;
