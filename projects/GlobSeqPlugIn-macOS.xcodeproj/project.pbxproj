@@ -25,6 +25,9 @@
 /* End PBXAggregateTarget section */
 
 /* Begin PBXBuildFile section */
+		3E41A8D924A5F92900B27BA1 /* IPlugOSC_msg.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 4F5369C120C446430089212E /* IPlugOSC_msg.cpp */; };
+		3E41A8DA24A5F92B00B27BA1 /* IPlugOSC_msg.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 4F5369C120C446430089212E /* IPlugOSC_msg.cpp */; };
+		3E41A8DB24A5F92C00B27BA1 /* IPlugOSC_msg.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 4F5369C120C446430089212E /* IPlugOSC_msg.cpp */; };
 		3EBBC988249D6DA500175D93 /* process_unix.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3EBBC96A249D6DA500175D93 /* process_unix.cpp */; };
 		3EBBC989249D6DA500175D93 /* process_unix.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3EBBC96A249D6DA500175D93 /* process_unix.cpp */; };
 		3EBBC98A249D6DA500175D93 /* process_unix.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3EBBC96A249D6DA500175D93 /* process_unix.cpp */; };
@@ -2415,6 +2418,7 @@
 				3EBBC9B1249D6DA500175D93 /* listen.cpp in Sources */,
 				3EBBC9BA249D6DA500175D93 /* httpget.cpp in Sources */,
 				4FA9F80721F760C1004E6FE2 /* IGraphicsLice_src.mm in Sources */,
+				3E41A8DB24A5F92C00B27BA1 /* IPlugOSC_msg.cpp in Sources */,
 				4FA9F81021F76177004E6FE2 /* IGraphicsAGG_src.mm in Sources */,
 				4F993F7423055C96000313AF /* IPlugProcessor.cpp in Sources */,
 				4F8C10E320BA2796006320CD /* IGraphicsEditorDelegate.cpp in Sources */,
@@ -2523,6 +2527,7 @@
 				4F6FD2B322675B6300FC59E6 /* IGraphicsCoreText.mm in Sources */,
 				4F815973205D50EB00393585 /* vstinitiids.cpp in Sources */,
 				4F81597E205D50EB00393585 /* fdebug.cpp in Sources */,
+				3E41A8DA24A5F92B00B27BA1 /* IPlugOSC_msg.cpp in Sources */,
 				4FA9F80621F760C1004E6FE2 /* IGraphicsLice_src.mm in Sources */,
 				3EBBC9AD249D6DA500175D93 /* webserver.cpp in Sources */,
 				4F9828B8140A9EB700F3FCC1 /* IPlugAPIBase.cpp in Sources */,
@@ -2667,6 +2672,7 @@
 				3EBBC9B8249D6DA500175D93 /* httpget.cpp in Sources */,
 				4F690C9B203A345100A4A13E /* IPlugAPP_main.cpp in Sources */,
 				4F63696D20A463090022C370 /* IControls.cpp in Sources */,
+				3E41A8D924A5F92900B27BA1 /* IPlugOSC_msg.cpp in Sources */,
 				4FB1F58920E4B004004157C8 /* IGraphicsMac.mm in Sources */,
 				3EBBC9A0249D6DA500175D93 /* util.cpp in Sources */,
 				3EBBC98B249D6DA500175D93 /* process.cpp in Sources */,
