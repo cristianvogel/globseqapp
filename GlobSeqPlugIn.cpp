@@ -8,35 +8,61 @@
 
 GlobSeqPlugIn::GlobSeqPlugIn(const InstanceInfo& info)
 : Plugin(info, MakeConfig(kNumParams, kNumPresets))
-, OSCSender("127.0.0.1", 8000)
+
 {
-
-    std::cout << std::endl << "Tiny-Process looks for BeSlime" << std::endl;
+  
+  //thread def 2
     std::thread slimeThread( [this] () {
-        
-    TinyProcessLib::Process zeroConfProcess  ("dns-sd -B _ssh._tcp.", "", [this] (const char *bytes, size_t n)
-            {
-              std::cout << "Output from stdout: " << std::string(bytes, n);
-              beSlimeName = bytes;
-      
-              //extract beslime name
-              std::stringstream ss(beSlimeName);
-              std::string line;
+                                        
+      TinyProcessLib::Process zeroConfProcess  ("dns-sd -B _ssh._tcp.", "", [this ] (const char *bytes, size_t n)
+                                                {
+                                                  std::cout << "\nOutput from zero conf stdout:\n" << std::string(bytes, n);
+                                                  beSlimeName = bytes;
+                                          
+                                                  //extract beslime name
+                                                  std::stringstream ss(beSlimeName);
+                                                  std::string line;
 
-              while(std::getline(ss,line,'\n')){
-                if(line.find("beslime") != std::string::npos) {
-                  auto beslimeId = line.substr(line.find("beslime") + 8,3);
-                  auto hardwareName = "beslime-" + beslimeId;
-                  std::cout << "ID: " << beslimeId << std::endl;
-                  beSlimeName = hardwareName;
-                }
-              }
-          });
+                                                  while(std::getline(ss,line,'\n')){
+                                                    if(line.find("beslime") != std::string::npos) {
+                                                      const auto beslimeId = line.substr(line.find("beslime") + 8,3);
+                                                      const auto hardwareName = "beslime-" + beslimeId;
+                                                      std::cout << "ID: " << beslimeId << std::endl;
+                                                      beSlimeName = hardwareName;
+                                                      if (beslimeId != "") {
+                                                          std::cout << std::endl << "Tiny-Process extracts IP" << std::endl;
+                                                        //thread def 1 currently not working
+                                                          std::thread slimeIPThread( [this] () {
+                                                            TinyProcessLib::Process ipGrab ("dns-sd -G v4 " + beSlimeName + ".local.", "", [this] (const char *bytes, size_t n)
+                                                            {
+                                                                  std::cout << "\nOutput from stdout IP grabber: \n" << std::string(bytes, n);
+                                                                  beSlimeIP = bytes;
+                                                                  
+                                                              //extract beslime IP
+                                                              std::stringstream ssip(beSlimeIP);
+                                                              std::string ipLine;
+                                                              while(std::getline(ssip,ipLine,'\n')){
+                                                                if(ipLine.find("beslime") != std::string::npos) {
+                                                                  const auto ip = (ipLine.substr(ipLine.find(" 169.")+1,16));
+                                                                  std::cout << "IP: " << ip << std::endl;
+                                                                  beSlimeIP = ip;
+                                                                  
+                                                                  //todo: I'd like to assign the new destination IP here from within the networking thread
+                                                                }
+                                                              }
+                                                            });
+                                                          });
+                                                        slimeIPThread.detach();
+                                                      }
+                                                    }
+                                                  }
+                                              });
     });
-    slimeThread.detach();
+  slimeThread.detach();
+
   
   GetParam(kBPM)->InitDouble("BPM", 0., 0., 1000.0, 0.5, "bpm");
-
+ 
 #if IPLUG_EDITOR // http://bit.ly/2S64BDd
   mMakeGraphicsFunc = [&]() {
     return MakeGraphics(*this, PLUG_WIDTH, PLUG_HEIGHT, PLUG_FPS, GetScaleForScreen(PLUG_HEIGHT));
@@ -66,17 +92,14 @@ GlobSeqPlugIn::GlobSeqPlugIn(const InstanceInfo& info)
                                   }
                         );
   };
-  
-  std::cout << "Slimer->" + beSlimeName << std::endl;
-    
-#endif
-    
-  
 }
+    
 
 GlobSeqPlugIn::~GlobSeqPlugIn(){
-  // kill the external Process thread in the destructor here when I learn how
+  
+  // kill the external TinyProcess threads in the destructor here when I learn how
 }
+#endif
 
 
 #if IPLUG_DSP

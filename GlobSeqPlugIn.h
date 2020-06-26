@@ -20,8 +20,15 @@ public:
   GlobSeqPlugIn(const InstanceInfo& info);
   ~GlobSeqPlugIn();
   
+  
   std::string beSlimeName = "◌ Looking for beslime...";
   std::string beSlimeIP = "";
+  
+  WDL_String senderNetworkInfo;
+  
+  //I tried creating an OSCSender object on the heap
+  //but i don't understand how to change its sending destination
+  OSCSender *oscSender = new OSCSender();
   
 #if IPLUG_DSP // http://bit.ly/2S64BDd
   void ProcessBlock(sample** inputs, sample** outputs, int nFrames) override;
