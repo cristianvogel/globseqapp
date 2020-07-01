@@ -22,6 +22,14 @@ enum EControlTags
   kNumCtrlTags
 };
 
+enum EStatusMessages
+{
+  kMsgScanning = 0,
+  kMsgConnected,
+  kNumStatusMessages
+};
+
+
 using namespace iplug;
 using namespace igraphics;
 
@@ -31,8 +39,15 @@ public:
   GlobSeqPlugIn(const InstanceInfo& info);
   ~GlobSeqPlugIn();
 
-  std::string beSlimeName = "⚆ Looking for beslime...";
-  std::string beSlimeIP = "";
+  std::string beSlimeName = "";
+  std::vector<std::string> cnsl =
+  {
+    "⚇ BeSlime not connected",
+    "⚉ "
+  };
+  std::string beSlimeIP = "⋯";
+  std::string consoleText = "";
+
   
   WDL_String senderNetworkInfo;
 

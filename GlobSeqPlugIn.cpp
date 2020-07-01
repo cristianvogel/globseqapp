@@ -31,7 +31,7 @@ GlobSeqPlugIn::GlobSeqPlugIn(const InstanceInfo& info)
       //▼ small logging console output
 
       pGraphics->AttachControl
-      (new ITextControl(b.GetFromBLHC(PLUG_WIDTH,18).SubRectHorizontal(3, 1), beSlimeName.c_str(), consoleFont, true), kCtrlNetStatus);
+      (new ITextControl(b.GetFromBLHC(PLUG_WIDTH,18).SubRectHorizontal(3, 1), consoleText.c_str(), consoleFont, true), kCtrlNetStatus);
       
       //▼ the right way to make a dial with a paramIdx and ActionFunction
       // in this case an OSC message sending float to one of the oscSender
@@ -44,6 +44,7 @@ GlobSeqPlugIn::GlobSeqPlugIn(const InstanceInfo& info)
       IVKnobControl* bpmDial = dynamic_cast<IVKnobControl*> (pGraphics->GetControlWithTag(kCtrlTagBPM));
       bpmDial -> SetActionFunction (
                                      [this] (IControl* pCaller) {
+        
                                                               if (oscSender!=nullptr){
                                                               pCaller->
                                                                        SetParamIdx(kCtrlTagBPM);
@@ -71,11 +72,9 @@ GlobSeqPlugIn::GlobSeqPlugIn(const InstanceInfo& info)
                                         [this] (IControl* pCaller)
                                         {
                                           SplashClickActionFunc(pCaller);
-                                          // rescan lambda method
-                                          stop_scan_thread = true;
-                                          OSCSender* socket = oscSender.release();
-                                          delete socket;
-                                          launchNetworkingThreads();
+                                          ITextControl* cnsl = dynamic_cast<ITextControl*>(pCaller->GetUI()->GetControlWithTag(kCtrlNetStatus));
+                                          cnsl->SetStr(consoleText.c_str());
+                                          cnsl->SetDirty();
                                         }
                                         );
     };
@@ -94,9 +93,10 @@ GlobSeqPlugIn::~GlobSeqPlugIn() {
  Implemented a naive thread kill method scraped from https://stackoverflow.com/questions/12207684/how-do-i-terminate-a-thread-in-c11
  */
 void GlobSeqPlugIn::launchNetworkingThreads(){
-  stop_scan_thread = false;
+
   std::thread slimeThread( [this] () {
-      if (stop_scan_thread) return; // naive attempt to kill thread
+ 
+       consoleText = cnsl[kMsgScanning];
        TinyProcessLib::Process zeroConfProcess  ("dns-sd -B _ssh._tcp.", "", [this ] (const char *bytes, size_t n)
                                                  {
                                                    std::cout << "\nOutput from zero conf stdout:\n" << std::string(bytes, n);
@@ -108,50 +108,64 @@ void GlobSeqPlugIn::launchNetworkingThreads(){
 
                                                    while(std::getline(ss,line,'\n'))
                                                    { //start process to extract beslime name
-                                                     if (stop_scan_thread) return; // naive attempt to kill thread
+                                                     
                                                      if(line.find("beslime") != std::string::npos)
                                                      {
                                                        const auto beslimeId = line.substr(line.find("beslime") + 8,3);
                                                        const auto hardwareName = "beslime-" + beslimeId;
                                                        std::cout << "☑︎ dns-sd extracted name: " << hardwareName << std::endl;
                                                        beSlimeName = hardwareName;
-                                                       if (beslimeId != "")
+                                                       if (!line.empty())
                                                        {
-                                                           std::cout << std::endl << "Extracting IP from scan..." << std::endl;
+                                                           std::cout << std::endl << "Launching IP Scan thread..." << std::endl;
                                                            std::thread slimeIPThread( [this] ()
                                                          { //start process to extract beslime IP
-                                                             if (stop_scan_thread) return; // naive attempt to kill thread
+                                                             
                                                              TinyProcessLib::Process ipGrab (
                                                                                              "dns-sd -G v4 " +
                                                                                              beSlimeName + ".local.",
                                                                                              "",
                                                                                              [this] ( const char *bytes, size_t n )
                                                              {
+                                                               std::cout << "\nOutput from IP search stdout:\n" << std::string(bytes, n);
                                                                beSlimeIP = bytes;
                                                                std::stringstream ssip(beSlimeIP);
                                                                std::string ipLine;
                                                               
                                                                while(std::getline(ssip,ipLine,'\n'))
                                                                {
-                                                                 if (stop_scan_thread) return; // naive attempt to kill thread
-                                                                 if(ipLine.find("beslime") != std::string::npos)
+                                                                 if(ipLine.find("Rmv") != std::string::npos)
                                                                  {
-                                                                   const auto ip = (ipLine.substr(ipLine.find(" 169.")+1,16));
-                                                                   std::cout << "☑︎ dns-sd extracted IP: " << ip << std::endl;
-                                                                   beSlimeIP = ip;
-                                                                   oscSender = std::make_unique<OSCSender>(beSlimeIP.c_str(), 8000);
+                                                                    oscSender.reset();
+                                                                    oscSender =std::make_unique<OSCSender>(); //localhost
+                                                                    consoleText = cnsl[kMsgScanning];
+                                                                    ipLine.erase();
+                                                                    break;
+                                                                 }
+                                                                 
+                                                                 if (!ipLine.empty()) {
+                                                                   if(ipLine.find("beslime") != std::string::npos)
+                                                                    {
+                                                                     const auto ip = (ipLine.substr(ipLine.find(" 169.")+1,16));
+                                                                     std::cout << "☑︎ dns-sd extracted IP: " << ip << std::endl;
+                                                                     beSlimeIP = ip;
+                                                                     cnsl[kMsgConnected] = cnsl[kMsgConnected] + beSlimeName;
+                                                                     consoleText = cnsl[kMsgConnected];
+                                                                     oscSender.reset();
+                                                                     oscSender = std::make_unique<OSCSender>(beSlimeIP.c_str(), 8000);
+                                                                    }
                                                                  }
                                                                }
-                                                             });
+                                                          return false;   });
                                                            });
-                                                         if (stop_scan_thread) return; // naive attempt to kill thread
+                                                        
                                                          slimeIPThread.detach();
                                                        }
                                                      }
                                                    } //outer while loop close
-                                               });
+                                             return false;  });
                                             });
-   if (stop_scan_thread) return; // naive attempt to kill thread
+ 
    slimeThread.detach();
 }
 
