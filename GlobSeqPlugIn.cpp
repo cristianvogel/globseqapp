@@ -9,52 +9,94 @@
 GlobSeqPlugIn::GlobSeqPlugIn(const InstanceInfo& info)
 : Plugin(info, MakeConfig(kNumParams, kNumPresets))
 
-{
+{ // start layout function
   launchNetworkingThreads();
-  GetParam(kCntrlTagBPM)->InitDouble("BPM", 0., 0., 1000.0, 0.5, "bpm");
+  GetParam(kCtrlTagBPM)->InitDouble("BPM", 0., 0., 1000.0, 0.5, "bpm");
  
 #if IPLUG_EDITOR // http://bit.ly/2S64BDd
   mMakeGraphicsFunc = [&]() {
     return MakeGraphics(*this, PLUG_WIDTH, PLUG_HEIGHT, PLUG_FPS, GetScaleForScreen(PLUG_HEIGHT));
   };
   
-  mLayoutFunc = [&](IGraphics* pGraphics) {
-    pGraphics->AttachCornerResizer(EUIResizerMode::Scale, false);
-    pGraphics->AttachPanelBackground(COLOR_GRAY);
-    pGraphics->LoadFont("Roboto-Regular", ROBOTO_FN);
-    const IRECT b = pGraphics->GetBounds();
-    //▼ label
-    pGraphics->AttachControl
-              (new ITextControl(b.GetMidVPadded(50), beSlimeName.c_str(), IText(50)));
-    
-    //▼ the right way to make a dial with a paramIdx and ActionFunction
-    // in this case an OSC message sending float
-    pGraphics->AttachControl
-              (new IVKnobControl(
-                                 b.GetCentredInside(100).GetVShifted(-100),
-                                 kCntrlTagBPM)
-              )->SetActionFunction([this](IControl* pCaller) {
-                                     pCaller->SetParamIdx(kCntrlTagBPM);
-                                     OscMessageWrite msg;
-                                     msg.PushWord("/bpm");
-                                     msg.PushFloatArg(pCaller->GetValue());
-                                     oscSender->SendOSCMessage(msg);
-                                  }
-                        );
-  };
-}
-    
+  mLayoutFunc = [&](IGraphics* pGraphics)
+    {
+      pGraphics->AttachCornerResizer(EUIResizerMode::Scale, false);
+      pGraphics->AttachPanelBackground(COLOR_GRAY);
+      pGraphics->LoadFont("Roboto-Regular", ROBOTO_FN);
+      pGraphics->LoadFont("Menlo", MENLO_FN);
+      
+  const IRECT b = pGraphics->GetBounds().GetScaledAboutCentre(0.95f);
+      consoleFont = IText ( 12.f, "Menlo");
+      
+      //▼ small logging console output
 
-GlobSeqPlugIn::~GlobSeqPlugIn(){
+      pGraphics->AttachControl
+      (new ITextControl(b.GetFromBLHC(PLUG_WIDTH,18).SubRectHorizontal(3, 1), beSlimeName.c_str(), consoleFont, true), kCtrlNetStatus);
+      
+      //▼ the right way to make a dial with a paramIdx and ActionFunction
+      // in this case an OSC message sending float to one of the oscSender
+      //
+      pGraphics->AttachControl
+                (new IVKnobControl(
+                                   b.GetCentredInside(100).GetVShifted(-100),
+                                   kBPM), kCtrlTagBPM
+                 );
+      IVKnobControl* bpmDial = dynamic_cast<IVKnobControl*> (pGraphics->GetControlWithTag(kCtrlTagBPM));
+      bpmDial -> SetActionFunction (
+                                     [this] (IControl* pCaller) {
+                                                              if (oscSender!=nullptr){
+                                                              pCaller->
+                                                                       SetParamIdx(kCtrlTagBPM);
+                                                                       OscMessageWrite msg;
+                                                                       msg.PushWord("/bpm");
+                                                                       msg.PushFloatArg(pCaller->GetValue());
+                                                                       oscSender->SendOSCMessage(msg);
+                                                                }
+                                                              }
+                                    );
+        //bounds, IActionFunction aF = SplashClickActionFunc, const char* label = "", const IVStyle& style = DEFAULT_STYLE, bool labelInButton = true, bool valueInButton = true, EVShape shape = EVShape::Rectangle
+      pGraphics->AttachControl( new IVButtonControl(
+                                                    b.GetFromBLHC(PLUG_WIDTH, 18.f * 2.f).SubRectHorizontal(12, 0),
+                                                    SplashClickActionFunc,
+                                                    "rescan",
+                                                    DEFAULT_STYLE.WithEmboss(false).WithDrawShadows(false).WithLabelText(consoleFont.WithSize(8.0f).WithAlign(EAlign::Center)),
+                                                    true,
+                                                    true,
+                                                    EVShape::Rectangle
+                                                    )
+                               , kReScan);
   
-  // todo: kill the external TinyProcess threads in this destructor when I learn how thats done
+      IVButtonControl* rescanButton = dynamic_cast<IVButtonControl*>(pGraphics->GetControlWithTag(kReScan));
+      rescanButton -> SetActionFunction(
+                                        [this] (IControl* pCaller)
+                                        {
+                                          SplashClickActionFunc(pCaller);
+                                          // rescan lambda method
+                                          stop_scan_thread = true;
+                                          OSCSender* socket = oscSender.release();
+                                          delete socket;
+                                          launchNetworkingThreads();
+                                        }
+                                        );
+    };
+  
+}//end layout function
+    
+//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+GlobSeqPlugIn::~GlobSeqPlugIn() {
+  stop_scan_thread = true; // naive attempt to kill launchNetworkingThreads()
 }
 
-
+/*
+ Launches two threaded system tasks firstly to browse for zeroconfig name of the Kyma hardware
+ and secondly to extract the IP address.
+ OSCSender is then instantiated with the IP address when known, inside the IP extraction thread.
+ Implemented a naive thread kill method scraped from https://stackoverflow.com/questions/12207684/how-do-i-terminate-a-thread-in-c11
+ */
 void GlobSeqPlugIn::launchNetworkingThreads(){
-  
+  stop_scan_thread = false;
   std::thread slimeThread( [this] () {
-                                         
+      if (stop_scan_thread) return; // naive attempt to kill thread
        TinyProcessLib::Process zeroConfProcess  ("dns-sd -B _ssh._tcp.", "", [this ] (const char *bytes, size_t n)
                                                  {
                                                    std::cout << "\nOutput from zero conf stdout:\n" << std::string(bytes, n);
@@ -64,40 +106,52 @@ void GlobSeqPlugIn::launchNetworkingThreads(){
                                                    std::stringstream ss(beSlimeName);
                                                    std::string line;
 
-                                                   while(std::getline(ss,line,'\n')){
-                                                     if(line.find("beslime") != std::string::npos) {
+                                                   while(std::getline(ss,line,'\n'))
+                                                   { //start process to extract beslime name
+                                                     if (stop_scan_thread) return; // naive attempt to kill thread
+                                                     if(line.find("beslime") != std::string::npos)
+                                                     {
                                                        const auto beslimeId = line.substr(line.find("beslime") + 8,3);
                                                        const auto hardwareName = "beslime-" + beslimeId;
-                                                       std::cout << "ID: " << beslimeId << std::endl;
+                                                       std::cout << "☑︎ dns-sd extracted name: " << hardwareName << std::endl;
                                                        beSlimeName = hardwareName;
-                                                       if (beslimeId != "") {
-                                                           std::cout << std::endl << "Tiny-Process extracts IP" << std::endl;
-                                                         //thread def 1 currently not working
-                                                           std::thread slimeIPThread( [this] () {
-                                                             TinyProcessLib::Process ipGrab ("dns-sd -G v4 " + beSlimeName + ".local.", "", [this] (const char *bytes, size_t n)
+                                                       if (beslimeId != "")
+                                                       {
+                                                           std::cout << std::endl << "Extracting IP from scan..." << std::endl;
+                                                           std::thread slimeIPThread( [this] ()
+                                                         { //start process to extract beslime IP
+                                                             if (stop_scan_thread) return; // naive attempt to kill thread
+                                                             TinyProcessLib::Process ipGrab (
+                                                                                             "dns-sd -G v4 " +
+                                                                                             beSlimeName + ".local.",
+                                                                                             "",
+                                                                                             [this] ( const char *bytes, size_t n )
                                                              {
-                                                                   std::cout << "\nOutput from stdout IP grabber: \n" << std::string(bytes, n);
-                                                                   beSlimeIP = bytes;
-                                                                   
-                                                               //extract beslime IP
+                                                               beSlimeIP = bytes;
                                                                std::stringstream ssip(beSlimeIP);
                                                                std::string ipLine;
-                                                               while(std::getline(ssip,ipLine,'\n')){
-                                                                 if(ipLine.find("beslime") != std::string::npos) {
+                                                              
+                                                               while(std::getline(ssip,ipLine,'\n'))
+                                                               {
+                                                                 if (stop_scan_thread) return; // naive attempt to kill thread
+                                                                 if(ipLine.find("beslime") != std::string::npos)
+                                                                 {
                                                                    const auto ip = (ipLine.substr(ipLine.find(" 169.")+1,16));
-                                                                   std::cout << "IP: " << ip << std::endl;
+                                                                   std::cout << "☑︎ dns-sd extracted IP: " << ip << std::endl;
                                                                    beSlimeIP = ip;
                                                                    oscSender = std::make_unique<OSCSender>(beSlimeIP.c_str(), 8000);
                                                                  }
                                                                }
                                                              });
                                                            });
+                                                         if (stop_scan_thread) return; // naive attempt to kill thread
                                                          slimeIPThread.detach();
                                                        }
                                                      }
-                                                   }
+                                                   } //outer while loop close
                                                });
-     });
+                                            });
+   if (stop_scan_thread) return; // naive attempt to kill thread
    slimeThread.detach();
 }
 

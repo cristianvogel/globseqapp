@@ -3,23 +3,4 @@
    uuid = "5C763B33-5CF8-4EEC-A695-4919A3416FBD"
    type = "0"
    version = "2.0">
-   <Breakpoints>
-      <BreakpointProxy
-         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
-         <BreakpointContent
-            uuid = "B6586A6D-8595-416C-944D-3A313FD0D355"
-            shouldBeEnabled = "No"
-            nameForDebugger = "Scanner"
-            ignoreCount = "0"
-            continueAfterRunningActions = "No"
-            filePath = "GlobSeqPlugIn.cpp"
-            startingColumnNumber = "9223372036854775807"
-            endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "26"
-            endingLineNumber = "26"
-            landmarkName = "GlobSeqPlugIn::GlobSeqPlugIn(info)"
-            landmarkType = "7">
-         </BreakpointContent>
-      </BreakpointProxy>
-   </Breakpoints>
 </Bucket>

@@ -22,7 +22,9 @@ int main() {
 
 
   cout << endl << "Example 1b - Hello World using arguments" << endl;
-  Process process1b(vector<string>{"/bin/echo", "Hello", "World"}, "", [](const char *bytes, size_t n) {
+  Process process1b
+          (vector<string>{"/bin/echo", "Hello", "World"},
+           "", [](const char *bytes, size_t n) {
     cout << "Output from stdout: " << string(bytes, n);
   });
   exit_status = process1b.get_exit_status();
