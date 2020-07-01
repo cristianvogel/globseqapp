@@ -10,6 +10,7 @@ GlobSeqPlugIn::GlobSeqPlugIn(const InstanceInfo& info)
 : Plugin(info, MakeConfig(kNumParams, kNumPresets))
 
 { // start layout function
+
   launchNetworkingThreads();
   GetParam(kCtrlTagBPM)->InitDouble("BPM", 0., 0., 1000.0, 0.5, "bpm");
  
@@ -41,20 +42,7 @@ GlobSeqPlugIn::GlobSeqPlugIn(const InstanceInfo& info)
                                    b.GetCentredInside(100).GetVShifted(-100),
                                    kBPM), kCtrlTagBPM
                  );
-      IVKnobControl* bpmDial = dynamic_cast<IVKnobControl*> (pGraphics->GetControlWithTag(kCtrlTagBPM));
-      bpmDial -> SetActionFunction (
-                                     [this] (IControl* pCaller) {
-        
-                                                              if (oscSender!=nullptr){
-                                                              pCaller->
-                                                                       SetParamIdx(kCtrlTagBPM);
-                                                                       OscMessageWrite msg;
-                                                                       msg.PushWord("/bpm");
-                                                                       msg.PushFloatArg(pCaller->GetValue());
-                                                                       oscSender->SendOSCMessage(msg);
-                                                                }
-                                                              }
-                                    );
+
         //bounds, IActionFunction aF = SplashClickActionFunc, const char* label = "", const IVStyle& style = DEFAULT_STYLE, bool labelInButton = true, bool valueInButton = true, EVShape shape = EVShape::Rectangle
       pGraphics->AttachControl( new IVButtonControl(
                                                     b.GetFromBLHC(PLUG_WIDTH, 18.f * 2.f).SubRectHorizontal(12, 0),
@@ -65,25 +53,43 @@ GlobSeqPlugIn::GlobSeqPlugIn(const InstanceInfo& info)
                                                     true,
                                                     EVShape::Rectangle
                                                     )
-                               , kReScan);
+                               , kReScan)
+                                -> SetActionFunction(
+                                                      [this] (IControl* pCaller)
+                                                      {
+                                                        SplashClickActionFunc(pCaller);
+
+                                                          pCaller->GetUI()->
+                                                          GetControlWithTag(kCtrlTagBPM)->
+                                                          SetActionFunction ( [this] (IControl* pDialControl)
+                                                                             {
+                                                                              if (oscSender!=nullptr){
+                                                                                                    pDialControl->
+                                                                                                             SetParamIdx(kCtrlTagBPM);
+                                                                                                             OscMessageWrite msg;
+                                                                                                             msg.PushWord("/bpm");
+                                                                                                             msg.PushFloatArg(pDialControl->GetValue());
+                                                                                                             oscSender->SendOSCMessage(msg);
+                                                                                                      }
+                                                                              }
+                                                                            );
+                                                          //update console net status
+                                                          ITextControl* cnsl = dynamic_cast<ITextControl*>(pCaller->GetUI()->GetControlWithTag(kCtrlNetStatus));
+                                                          cnsl->SetStr(consoleText.c_str());
+                                                          cnsl->SetDirty();
+                                                      }
+                                                     );
   
-      IVButtonControl* rescanButton = dynamic_cast<IVButtonControl*>(pGraphics->GetControlWithTag(kReScan));
-      rescanButton -> SetActionFunction(
-                                        [this] (IControl* pCaller)
-                                        {
-                                          SplashClickActionFunc(pCaller);
-                                          ITextControl* cnsl = dynamic_cast<ITextControl*>(pCaller->GetUI()->GetControlWithTag(kCtrlNetStatus));
-                                          cnsl->SetStr(consoleText.c_str());
-                                          cnsl->SetDirty();
-                                        }
-                                        );
+     // this is how to stash the control in a pointer variable
+    //  IVButtonControl* rescanButton = dynamic_cast<IVButtonControl*>(pGraphics->GetControlWithTag(kReScan));
+      
     };
   
 }//end layout function
     
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 GlobSeqPlugIn::~GlobSeqPlugIn() {
-  stop_scan_thread = true; // naive attempt to kill launchNetworkingThreads()
+  // some kind of naive attempt to kill launchNetworkingThreads()
 }
 
 /*
@@ -140,19 +146,20 @@ void GlobSeqPlugIn::launchNetworkingThreads(){
                                                                     oscSender =std::make_unique<OSCSender>(); //localhost
                                                                     consoleText = cnsl[kMsgScanning];
                                                                     ipLine.erase();
+                                                                    beSlimeConnected = false;
                                                                     break;
                                                                  }
                                                                  
                                                                  if (!ipLine.empty()) {
                                                                    if(ipLine.find("beslime") != std::string::npos)
                                                                     {
-                                                                     const auto ip = (ipLine.substr(ipLine.find(" 169.")+1,16));
+                                                                      auto ip = (ipLine.substr(ipLine.find(" 169.")+1,16));
                                                                      std::cout << "☑︎ dns-sd extracted IP: " << ip << std::endl;
-                                                                     beSlimeIP = ip;
+                                                                     beSlimeIP = gsh->chomp(ip);
                                                                      cnsl[kMsgConnected] = cnsl[kMsgConnected] + beSlimeName;
                                                                      consoleText = cnsl[kMsgConnected];
-                                                                     oscSender.reset();
                                                                      oscSender = std::make_unique<OSCSender>(beSlimeIP.c_str(), 8000);
+                                                                     beSlimeConnected = true;
                                                                     }
                                                                  }
                                                                }
@@ -162,6 +169,7 @@ void GlobSeqPlugIn::launchNetworkingThreads(){
                                                          slimeIPThread.detach();
                                                        }
                                                      }
+  
                                                    } //outer while loop close
                                              return false;  });
                                             });
