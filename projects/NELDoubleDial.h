@@ -37,6 +37,7 @@ public:
 
   void Draw(IGraphics& p) override;
   void OnMouseDrag(float x, float y, float dX, float dY, const IMouseMod& mod) override;
+  void OnMouseWheel(float x, float y, const IMouseMod& mod, float d) override;
 
     
 private:
@@ -48,6 +49,5 @@ private:
   float mAngle1, mAngle2;
   float mTrackSize = 8.f;
   float mAnchorAngle; // for bipolar arc
-  IColor interp;
 };
 

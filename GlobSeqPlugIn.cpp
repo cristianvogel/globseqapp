@@ -10,10 +10,11 @@
 GlobSeqPlugIn::GlobSeqPlugIn(const InstanceInfo& info)
 : Plugin(info, MakeConfig(kNumParams, kNumPresets))
 
-{ // start layout function
+{
 
   launchNetworkingThreads();
-  GetParam(kCtrlTagBPM)->InitDouble("BPM", 0., 0., 1000.0, 0.5, "bpm");
+  GetParam(kFluxDial)->InitDouble("FluxType", 0., 0., 1.f, 0.f, "FluxType");
+  GetParam(kFluxDial)->InitDouble("FluxRange", 0., 0., 1.f, 0.f, "FluxRange");
  
 #if IPLUG_EDITOR // http://bit.ly/2S64BDd
   mMakeGraphicsFunc = [&]() {
@@ -21,89 +22,115 @@ GlobSeqPlugIn::GlobSeqPlugIn(const InstanceInfo& info)
   };
   
   mLayoutFunc = [&](IGraphics* pGraphics)
-    {
+    { // start layout lambda function
       pGraphics->AttachCornerResizer(EUIResizerMode::Scale, false);
       pGraphics->AttachPanelBackground(COLOR_NEL_TUNGSTEN);
       pGraphics->LoadFont("Roboto-Regular", ROBOTO_FN);
       pGraphics->LoadFont("Menlo", MENLO_FN);
-      const IVStyle button {
+      
+      const IVStyle rescanButtonStyle {
         true, // Show label
-        true, // Show value
+        false, // Show value
         {
-          DEFAULT_BGCOLOR, // Background
-          COLOR_WHITE, // Foreground
-          DEFAULT_PRCOLOR, // Pressed
-          COLOR_BLACK, // Frame
+          DEFAULT_SHCOLOR, // Background
+          COLOR_TRANSLUCENT, // Foreground
+          COLOR_LIGHT_GRAY, // Pressed
+          COLOR_TRANSPARENT, // Frame
           DEFAULT_HLCOLOR, // Highlight
           DEFAULT_SHCOLOR, // Shadow
           COLOR_BLACK, // Extra 1
           DEFAULT_X2COLOR, // Extra 2
           DEFAULT_X3COLOR  // Extra 3
         }, // Colors
-        IText(8.f, EAlign::Center) // Label text
+        IText(
+              10.f,
+              COLOR_LIGHT_GRAY,
+              "Menlo",
+              EAlign::Center,
+              EVAlign::Middle,
+              0.f,
+              DEFAULT_TEXTENTRY_BGCOLOR,
+              DEFAULT_TEXTENTRY_FGCOLOR
+              ) // Label text
       };
-
       
-  const IRECT b = pGraphics->GetBounds().GetScaledAboutCentre(0.95f);
-      consoleFont = IText ( 12.f, "Menlo");
+      // main app GUI IRECT
+      const IRECT b = pGraphics->GetBounds().GetScaledAboutCentre(0.95f);
+      const IRECT consoleBounds = b.GetFromBLHC(PLUG_WIDTH,18).SubRectHorizontal(3, 1);
+                                                           
+      /*
+          Possibly move from ITextControl to IVLabelControl in order to be able to apply styles for example:
+          IVLabelControl::IVLabelControl(const IRECT& bounds, const char* label, const IVStyle& style)
+      */
+            
+                 //▼ small logging console output
+                 consoleFont = IText ( 12.f, "Menlo").WithFGColor(COLOR_NEL_TUNGSTEN_FGBlend);
+                 pGraphics->AttachControl(new ITextControl(consoleBounds, consoleText.c_str(), consoleFont, true), kCtrlNetStatus);
+                 
+                 pGraphics->AttachControl(new ILambdaControl(
+                                                             b.GetFromBLHC(PLUG_WIDTH,18).SubRectHorizontal(3, 1),
+                                                             [this](ILambdaControl* pCaller, IGraphics& g, IRECT& rect)
+                                                               {
+                                                                 ITextControl* cnsl = dynamic_cast<ITextControl*>(g.GetControlWithTag(kCtrlNetStatus));
+                                                                 cnsl->SetStr(consoleText.c_str());
+                                                                 cnsl->SetDirty();
+                                                               },
+                                                             DEFAULT_ANIMATION_DURATION, true /*loop*/, false /*start imediately*/));
       
-      //▼ small logging console output
-
-      pGraphics->AttachControl
-      (new ITextControl(b.GetFromBLHC(PLUG_WIDTH,18).SubRectHorizontal(3, 1), consoleText.c_str(), consoleFont, true), kCtrlNetStatus);
-      
-      //▼ the right way to make a dial with a paramIdx and ActionFunction
-      // in this case an OSC message sending float to one of the oscSender
-      //
+      //▼ concentric dials with two paramIdx
+    
       pGraphics->AttachControl
                 (new NELDoubleDial(
                                    b.GetCentredInside(100).GetVShifted(-100),
-                                   {kBPM, kNoParameter}), kCtrlTagBPM
+                                   {kFluxDialInner, kFluxDialOuter}), kFluxDial
                  );
 
-        //bounds, IActionFunction aF = SplashClickActionFunc, const char* label = "", const IVStyle& style = DEFAULT_STYLE, bool labelInButton = true, bool valueInButton = true, EVShape shape = EVShape::Rectangle
+      //▼ Scan button attaches OSC ActionFunction lambda to concentric dials, button is atop kCtrlNetStatus
       pGraphics->AttachControl( new IVButtonControl(
-                                                    b.GetFromBLHC(PLUG_WIDTH, 18.f * 2.f).SubRectHorizontal(12, 0),
-                                                    SplashClickActionFunc,
-                                                    "rescan",
-                                                    DEFAULT_STYLE.WithEmboss(false).WithDrawShadows(false).WithLabelText(consoleFont.WithSize(8.0f).WithAlign(EAlign::Center)),
-                                                    true,
-                                                    true,
-                                                    EVShape::Rectangle
+                                                      consoleBounds,
+                                                      nullptr,
+                                                      "",
+                                                      rescanButtonStyle.WithEmboss(false).WithDrawShadows(false),
+                                                      true,
+                                                      true,
+                                                      EVShape::Rectangle
                                                     )
-                               , kReScan)
+                               , kCtrlReScan)
                                 -> SetActionFunction(
                                                       [this] (IControl* pCaller)
                                                       {
-                                                        SplashClickActionFunc(pCaller);
+                                                          pCaller->SetAnimation(
+                                                            [this] (IControl* pCaller) {
+                                                            auto progress = pCaller->GetAnimationProgress();
+                                                            if(progress > 1.) {
+                                                            pCaller->OnEndAnimation();
+                                                            return;
+                                                            }
+                                                            dynamic_cast<IVectorBase*>(pCaller)->SetColor(kPR, IColor::LinearInterpolateBetween(COLOR_NEL_LUNADA_stop2, kPR, static_cast<float>(progress) ));
+                                                            pCaller->SetDirty(false);
+                                                          }
+                                                            , 1000  ); //duration
 
                                                           pCaller->GetUI()->
-                                                          GetControlWithTag(kCtrlTagBPM)->
+                                                          GetControlWithTag(kCtrlFluxDial)->
                                                           SetActionFunction ( [this] (IControl* pDialControl)
                                                                              {
+                                                            
+                                                                              if (oscSender==nullptr) oscSender = std::make_unique<OSCSender>(); // localhost fallback
                                                                               if (oscSender!=nullptr){
-                                                                                                    pDialControl->
-                                                                                                             SetParamIdx(kCtrlTagBPM);
                                                                                                              OscMessageWrite msg;
-                                                                                                             msg.PushWord("/msg");
-                                                                                                             msg.PushFloatArg(pDialControl->GetValue());
+                                                                                                             msg.PushWord("/flux");
+                                                                                                             msg.PushFloatArg(pDialControl->GetValue(0));
+                                                                                                             msg.PushFloatArg(pDialControl->GetValue(1));
                                                                                                              oscSender->SendOSCMessage(msg);
                                                                                                       }
+                                                             
                                                                               }
                                                                             );
-                                                          //update console net status
-                                                          ITextControl* cnsl = dynamic_cast<ITextControl*>(pCaller->GetUI()->GetControlWithTag(kCtrlNetStatus));
-                                                          cnsl->SetStr(consoleText.c_str());
-                                                          cnsl->SetDirty();
                                                       }
                                                      );
-  
-     // this is how to stash the control in a pointer variable
-    //  IVButtonControl* rescanButton = dynamic_cast<IVButtonControl*>(pGraphics->GetControlWithTag(kReScan));
-      
-    };
-  
-}//end layout function
+      }; //end layout lambda function
+}
     
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 GlobSeqPlugIn::~GlobSeqPlugIn() {
@@ -167,7 +194,7 @@ void GlobSeqPlugIn::launchNetworkingThreads(){
                                                                  {
                                                                     mtx.lock();
                                                                       oscSender.reset();
-                                                                      oscSender =std::make_unique<OSCSender>(); //localhost
+                                                                      oscSender =std::make_unique<OSCSender>(); //fallback to localhost
                                                                       consoleText = cnsl[kMsgScanning];
                                                                       ipLine.erase();
                                                                       beSlimeConnected = false;
@@ -190,7 +217,7 @@ void GlobSeqPlugIn::launchNetworkingThreads(){
                                                                     }
                                                                  }
                                                                }
-                                                          return false;   });
+                                                               return false;   });
                                                            });
                                                         
                                                          slimeIPThread.detach();

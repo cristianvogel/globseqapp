@@ -7,6 +7,7 @@
 
 #include "NELDoubleDial.h"
 #include <algorithm>
+#include <iostream>
 
 void NELDoubleDial::Draw(IGraphics& g)  {
 
@@ -23,16 +24,15 @@ void NELDoubleDial::Draw(IGraphics& g)  {
   
   float angle = mAngle1 + (static_cast<float>(GetValue(0)) * (mAngle2 - mAngle1));
  
-  interp = IColor::LinearInterpolateBetween(COLOR_NEL_LUNADA_stop2, COLOR_NEL_LUNADA_stop3, static_cast<float>( fmin(1.0f, GetValue(0)*2.0f)) );
+  IColor interpStage = IColor::LinearInterpolateBetween(COLOR_NEL_LUNADA_stop2, COLOR_NEL_LUNADA_stop3, static_cast<float>( fmin(1.0f, GetValue(0)*2.0f)) );
   
   g.DrawCircle(COLOR_WHITE, cx, cy, radius,nullptr, 0.5f);
-  g.DrawArc(IColor::LinearInterpolateBetween(COLOR_NEL_LUNADA_stop1, interp, static_cast<float>(GetValue(0))),
+  g.DrawArc(IColor::LinearInterpolateBetween(COLOR_NEL_LUNADA_stop1, interpStage, static_cast<float>(GetValue(0))),
             cx, cy, radius,
             angle >= mAnchorAngle ? mAnchorAngle : mAnchorAngle - (mAnchorAngle - angle),
             angle >= mAnchorAngle ? angle : mAnchorAngle, &mBlend, mTrackSize);
   
   radius -= mTrackSize;
-  
   angle = mAngle1 + (static_cast<float>(GetValue(1)) * (mAngle2 - mAngle1));
   
   g.DrawCircle(COLOR_GRAY, cx, cy, radius,nullptr, 0.5f);
@@ -54,8 +54,9 @@ void NELDoubleDial::OnMouseDrag(float x, float y, float dX, float dY, const IMou
     mMouseDragValue += static_cast<double>(dX / static_cast<double>(dragBounds.R - dragBounds.L) / gearing);
   
   mMouseDragValue = Clip(mMouseDragValue, 0., 1.);
-  
-  double v = mMouseDragValue;
+ 
+  // QUANTISATION / STEPPED DIAL
+  //    double v = mMouseDragValue;
   //    const IParam* pParam = GetParam();
   //
   //    if (pParam && pParam->GetStepped() && pParam->GetStep() > 0)
@@ -73,7 +74,14 @@ void NELDoubleDial::OnMouseDrag(float x, float y, float dX, float dY, const IMou
   //        v /= range;
   //      }
   //    }
-  
-  SetValue(v, mod.C ? 0 : 1 /*needs to change depending on arc clicked */); // TODO: modify
+
+  SetValue( mMouseDragValue , mod.C ? 1 : 0 /*needs to change depending on arc clicked */);
+  SetDirty();
+}
+
+void NELDoubleDial::OnMouseWheel(float x, float y, const IMouseMod& mod, float d)
+{
+  double gearing = IsFineControl(mod, true) ? -0.001 : -0.01;
+  SetValue(GetValue(1) + gearing * d, 1);
   SetDirty();
 }

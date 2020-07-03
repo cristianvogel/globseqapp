@@ -11,7 +11,9 @@ const int kNumPresets = 1;
 
 enum EParams
 {
-  kBPM = 0,
+  kFluxDial = 0,
+  kFluxDialInner,
+  kFluxDialOuter,
   kNetstatus,
   kReScan,
   kNumParams
@@ -19,7 +21,9 @@ enum EParams
 
 enum EControlTags
 {
-  kCtrlTagBPM = 0,
+  kCtrlFluxDial = 0,
+  kCtrlFluxDialInner,
+  kCtrlFluxDialOuter,
   kCtrlNetStatus,
   kCtrlReScan,
   kNumCtrlTags
@@ -57,7 +61,6 @@ public:
   std::unique_ptr<OSCSender> oscSender;
   std::atomic_bool beSlimeConnected {false};
   std::mutex mtx;           // mutex for critical section
-
   
   IText consoleFont;
   GlobSeqHelpers* gsh = new GlobSeqHelpers();
