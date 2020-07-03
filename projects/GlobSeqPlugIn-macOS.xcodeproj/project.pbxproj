@@ -28,6 +28,7 @@
 		3E41A8D924A5F92900B27BA1 /* IPlugOSC_msg.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 4F5369C120C446430089212E /* IPlugOSC_msg.cpp */; };
 		3E41A8DA24A5F92B00B27BA1 /* IPlugOSC_msg.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 4F5369C120C446430089212E /* IPlugOSC_msg.cpp */; };
 		3E41A8DB24A5F92C00B27BA1 /* IPlugOSC_msg.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 4F5369C120C446430089212E /* IPlugOSC_msg.cpp */; };
+		3E7EB53D24AE959C00DC8983 /* NELDoubleDial.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3E7EB53C24AE959C00DC8983 /* NELDoubleDial.cpp */; };
 		3EBBC988249D6DA500175D93 /* process_unix.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3EBBC96A249D6DA500175D93 /* process_unix.cpp */; };
 		3EBBC989249D6DA500175D93 /* process_unix.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3EBBC96A249D6DA500175D93 /* process_unix.cpp */; };
 		3EBBC98A249D6DA500175D93 /* process_unix.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3EBBC96A249D6DA500175D93 /* process_unix.cpp */; };
@@ -478,6 +479,8 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		3E7EB53B24AE959C00DC8983 /* NELDoubleDial.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = NELDoubleDial.h; sourceTree = "<group>"; };
+		3E7EB53C24AE959C00DC8983 /* NELDoubleDial.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = NELDoubleDial.cpp; sourceTree = "<group>"; };
 		3EBBC96A249D6DA500175D93 /* process_unix.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = process_unix.cpp; sourceTree = "<group>"; };
 		3EBBC96B249D6DA500175D93 /* process.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = process.cpp; sourceTree = "<group>"; };
 		3EBBC96C249D6DA500175D93 /* LICENSE */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = LICENSE; sourceTree = "<group>"; };
@@ -956,6 +959,8 @@
 			children = (
 				3EE39FCF24ACFFB500373FDA /* GlobSeqHelpers.cpp */,
 				3EE39FD024ACFFB500373FDA /* GlobSeqHelpers.h */,
+				3E7EB53C24AE959C00DC8983 /* NELDoubleDial.cpp */,
+				3E7EB53B24AE959C00DC8983 /* NELDoubleDial.h */,
 				3EBBC969249D6DA500175D93 /* tiny-process */,
 				3EBBC971249D6DA500175D93 /* jnetlib */,
 				52FBBED30D0CF143001C8B8A /* config.h */,
@@ -2669,6 +2674,7 @@
 				4FB1F59120E4B011004157C8 /* IGraphicsMac_view.mm in Sources */,
 				3EBBC988249D6DA500175D93 /* process_unix.cpp in Sources */,
 				4F5C5F6B21BED08700E024A7 /* swell-appstub.mm in Sources */,
+				3E7EB53D24AE959C00DC8983 /* NELDoubleDial.cpp in Sources */,
 				4FD16D4013B635A0001D0217 /* swell-misc.mm in Sources */,
 				4FD16D4213B635AB001D0217 /* swell-wnd.mm in Sources */,
 				4FD16D4413B635B2001D0217 /* swell.cpp in Sources */,

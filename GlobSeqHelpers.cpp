@@ -8,6 +8,7 @@
 #include <iostream>
 #include "GlobSeqHelpers.h"
 
+
 //remove spaces
 std::string GlobSeqHelpers::chomp(std::string &str)
 {

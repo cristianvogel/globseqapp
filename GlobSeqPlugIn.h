@@ -3,6 +3,8 @@
 #include "IPlug_include_in_plug_hdr.h"
 #include "IPlugOSC.h"
 #include "GlobSeqHelpers.h"
+#include "NELDoubleDial.h"
+
 #include <atomic>
 
 const int kNumPresets = 1;
@@ -43,7 +45,7 @@ public:
   std::string beSlimeName = "";
   std::vector<std::string> cnsl =
   {
-    "⚇ BeSlime not connected",
+    "⚇ BeSlime?",
     "⚉ "
   };
   std::string beSlimeIP = "⋯";
@@ -54,6 +56,8 @@ public:
 
   std::unique_ptr<OSCSender> oscSender;
   std::atomic_bool beSlimeConnected {false};
+  std::mutex mtx;           // mutex for critical section
+
   
   IText consoleFont;
   GlobSeqHelpers* gsh = new GlobSeqHelpers();

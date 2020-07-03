@@ -5,6 +5,7 @@
 #include <iostream>
 #include <string>
 #include <sstream>
+#include <mutex>
 
 GlobSeqPlugIn::GlobSeqPlugIn(const InstanceInfo& info)
 : Plugin(info, MakeConfig(kNumParams, kNumPresets))
@@ -22,9 +23,26 @@ GlobSeqPlugIn::GlobSeqPlugIn(const InstanceInfo& info)
   mLayoutFunc = [&](IGraphics* pGraphics)
     {
       pGraphics->AttachCornerResizer(EUIResizerMode::Scale, false);
-      pGraphics->AttachPanelBackground(COLOR_GRAY);
+      pGraphics->AttachPanelBackground(COLOR_NEL_TUNGSTEN);
       pGraphics->LoadFont("Roboto-Regular", ROBOTO_FN);
       pGraphics->LoadFont("Menlo", MENLO_FN);
+      const IVStyle button {
+        true, // Show label
+        true, // Show value
+        {
+          DEFAULT_BGCOLOR, // Background
+          COLOR_WHITE, // Foreground
+          DEFAULT_PRCOLOR, // Pressed
+          COLOR_BLACK, // Frame
+          DEFAULT_HLCOLOR, // Highlight
+          DEFAULT_SHCOLOR, // Shadow
+          COLOR_BLACK, // Extra 1
+          DEFAULT_X2COLOR, // Extra 2
+          DEFAULT_X3COLOR  // Extra 3
+        }, // Colors
+        IText(8.f, EAlign::Center) // Label text
+      };
+
       
   const IRECT b = pGraphics->GetBounds().GetScaledAboutCentre(0.95f);
       consoleFont = IText ( 12.f, "Menlo");
@@ -38,9 +56,9 @@ GlobSeqPlugIn::GlobSeqPlugIn(const InstanceInfo& info)
       // in this case an OSC message sending float to one of the oscSender
       //
       pGraphics->AttachControl
-                (new IVKnobControl(
+                (new NELDoubleDial(
                                    b.GetCentredInside(100).GetVShifted(-100),
-                                   kBPM), kCtrlTagBPM
+                                   {kBPM, kNoParameter}), kCtrlTagBPM
                  );
 
         //bounds, IActionFunction aF = SplashClickActionFunc, const char* label = "", const IVStyle& style = DEFAULT_STYLE, bool labelInButton = true, bool valueInButton = true, EVShape shape = EVShape::Rectangle
@@ -67,7 +85,7 @@ GlobSeqPlugIn::GlobSeqPlugIn(const InstanceInfo& info)
                                                                                                     pDialControl->
                                                                                                              SetParamIdx(kCtrlTagBPM);
                                                                                                              OscMessageWrite msg;
-                                                                                                             msg.PushWord("/bpm");
+                                                                                                             msg.PushWord("/msg");
                                                                                                              msg.PushFloatArg(pDialControl->GetValue());
                                                                                                              oscSender->SendOSCMessage(msg);
                                                                                                       }
@@ -92,6 +110,8 @@ GlobSeqPlugIn::~GlobSeqPlugIn() {
   // some kind of naive attempt to kill launchNetworkingThreads()
 }
 
+
+#pragma mark ZeroConfNetworking -
 /*
  Launches two threaded system tasks firstly to browse for zeroconfig name of the Kyma hardware
  and secondly to extract the IP address.
@@ -120,10 +140,13 @@ void GlobSeqPlugIn::launchNetworkingThreads(){
                                                        const auto beslimeId = line.substr(line.find("beslime") + 8,3);
                                                        const auto hardwareName = "beslime-" + beslimeId;
                                                        std::cout << "☑︎ dns-sd extracted name: " << hardwareName << std::endl;
-                                                       beSlimeName = hardwareName;
+                                                       mtx.lock();
+                                                        beSlimeName = hardwareName;
+                                                       mtx.unlock();
                                                        if (!line.empty())
                                                        {
                                                            std::cout << std::endl << "Launching IP Scan thread..." << std::endl;
+                                                         
                                                            std::thread slimeIPThread( [this] ()
                                                          { //start process to extract beslime IP
                                                              
@@ -142,24 +165,28 @@ void GlobSeqPlugIn::launchNetworkingThreads(){
                                                                {
                                                                  if(ipLine.find("Rmv") != std::string::npos)
                                                                  {
-                                                                    oscSender.reset();
-                                                                    oscSender =std::make_unique<OSCSender>(); //localhost
-                                                                    consoleText = cnsl[kMsgScanning];
-                                                                    ipLine.erase();
-                                                                    beSlimeConnected = false;
+                                                                    mtx.lock();
+                                                                      oscSender.reset();
+                                                                      oscSender =std::make_unique<OSCSender>(); //localhost
+                                                                      consoleText = cnsl[kMsgScanning];
+                                                                      ipLine.erase();
+                                                                      beSlimeConnected = false;
+                                                                    mtx.unlock();
                                                                     break;
                                                                  }
                                                                  
                                                                  if (!ipLine.empty()) {
                                                                    if(ipLine.find("beslime") != std::string::npos)
                                                                     {
-                                                                      auto ip = (ipLine.substr(ipLine.find(" 169.")+1,16));
-                                                                     std::cout << "☑︎ dns-sd extracted IP: " << ip << std::endl;
-                                                                     beSlimeIP = gsh->chomp(ip);
-                                                                     cnsl[kMsgConnected] = cnsl[kMsgConnected] + beSlimeName;
-                                                                     consoleText = cnsl[kMsgConnected];
-                                                                     oscSender = std::make_unique<OSCSender>(beSlimeIP.c_str(), 8000);
-                                                                     beSlimeConnected = true;
+                                                                       auto ip = (ipLine.substr(ipLine.find(" 169.")+1,16));
+                                                                       std::cout << "☑︎ dns-sd extracted IP: " << ip << std::endl;
+                                                                       mtx.lock();
+                                                                         beSlimeIP = gsh->chomp(ip);
+                                                                         cnsl[kMsgConnected] = cnsl[kMsgConnected] + beSlimeName;
+                                                                         consoleText = cnsl[kMsgConnected];
+                                                                         oscSender = std::make_unique<OSCSender>(beSlimeIP.c_str(), 8000);
+                                                                         beSlimeConnected = true;
+                                                                       mtx.unlock();
                                                                     }
                                                                  }
                                                                }
