@@ -11,9 +11,18 @@ const int kNumPresets = 1;
 
 enum EParams
 {
-  kFluxDial = 0,
-  kFluxDialInner,
-  kFluxDialOuter,
+  kFluxDial1 = 0,
+  kFluxDial2,
+  kFluxDial3,
+  kFluxDial4,
+  kFluxDial1Inner,
+  kFluxDial1Outer,
+  kFluxDial2Inner,
+  kFluxDial2Outer,
+  kFluxDial3Inner,
+  kFluxDial3Outer,
+  kFluxDial4Inner,
+  kFluxDial4Outer,
   kNetstatus,
   kReScan,
   kNumParams
@@ -21,9 +30,18 @@ enum EParams
 
 enum EControlTags
 {
-  kCtrlFluxDial = 0,
-  kCtrlFluxDialInner,
-  kCtrlFluxDialOuter,
+  kCtrlFluxDial1 = 0,
+  kCtrlFluxDial2,
+  kCtrlFluxDial3,
+  kCtrlFluxDial4,
+  kCtrlFluxDial1Inner,
+  kCtrlFluxDial1Outer,
+  kCtrlFluxDial2Inner,
+  kCtrlFluxDial2Outer,
+  kCtrlFluxDial3Inner,
+  kCtrlFluxDial3Outer,
+  kCtrlFluxDial4Inner,
+  kCtrlFluxDial4Outer,
   kCtrlNetStatus,
   kCtrlReScan,
   kNumCtrlTags

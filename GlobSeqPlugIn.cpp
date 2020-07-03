@@ -13,8 +13,14 @@ GlobSeqPlugIn::GlobSeqPlugIn(const InstanceInfo& info)
 {
 
   launchNetworkingThreads();
-  GetParam(kFluxDial)->InitDouble("FluxType", 0., 0., 1.f, 0.f, "FluxType");
-  GetParam(kFluxDial)->InitDouble("FluxRange", 0., 0., 1.f, 0.f, "FluxRange");
+  GetParam(kFluxDial1)->InitDouble("FluxType", 0., 0., 1.f, 0.f, "FluxType");
+  GetParam(kFluxDial1)->InitDouble("FluxRange", 0., 0., 1.f, 0.f, "FluxRange");
+  GetParam(kFluxDial2)->InitDouble("FluxType", 0., 0., 1.f, 0.f, "FluxType");
+  GetParam(kFluxDial2)->InitDouble("FluxRange", 0., 0., 1.f, 0.f, "FluxRange");
+  GetParam(kFluxDial3)->InitDouble("FluxType", 0., 0., 1.f, 0.f, "FluxType");
+  GetParam(kFluxDial3)->InitDouble("FluxRange", 0., 0., 1.f, 0.f, "FluxRange");
+  GetParam(kFluxDial4)->InitDouble("FluxType", 0., 0., 1.f, 0.f, "FluxType");
+  GetParam(kFluxDial4)->InitDouble("FluxRange", 0., 0., 1.f, 0.f, "FluxRange");
  
 #if IPLUG_EDITOR // http://bit.ly/2S64BDd
   mMakeGraphicsFunc = [&]() {
@@ -81,8 +87,23 @@ GlobSeqPlugIn::GlobSeqPlugIn(const InstanceInfo& info)
     
       pGraphics->AttachControl
                 (new NELDoubleDial(
-                                   b.GetCentredInside(100).GetVShifted(-100),
-                                   {kFluxDialInner, kFluxDialOuter}), kFluxDial
+                                   b.GetGridCell(0, 0, 2, 2).GetCentredInside(100),
+                                   {kFluxDial1Inner, kFluxDial1Outer}), kFluxDial1
+                 );
+      pGraphics->AttachControl
+                (new NELDoubleDial(
+                                   b.GetGridCell(1, 0, 2, 2).GetCentredInside(100),
+                                   {kFluxDial2Inner, kFluxDial2Outer}), kFluxDial2
+                 );
+      pGraphics->AttachControl
+                (new NELDoubleDial(
+                                   b.GetGridCell(0, 1, 2, 2).GetCentredInside(100),
+                                   {kFluxDial3Inner, kFluxDial3Outer}), kFluxDial3
+                 );
+      pGraphics->AttachControl
+                (new NELDoubleDial(
+                                   b.GetGridCell(1, 1, 2, 2).GetCentredInside(100),
+                                   {kFluxDial4Inner, kFluxDial4Outer}), kFluxDial4
                  );
 
       //▼ Scan button attaches OSC ActionFunction lambda to concentric dials, button is atop kCtrlNetStatus
@@ -110,25 +131,24 @@ GlobSeqPlugIn::GlobSeqPlugIn(const InstanceInfo& info)
                                                             pCaller->SetDirty(false);
                                                           }
                                                             , 1000  ); //duration
-
+                                for (int i=0; i<=3; i++) {
                                                           pCaller->GetUI()->
-                                                          GetControlWithTag(kCtrlFluxDial)->
-                                                          SetActionFunction ( [this] (IControl* pDialControl)
+                                                          GetControlWithTag(kCtrlFluxDial1 + i)->
+                                                          SetActionFunction ( [this, i] (IControl* pDialControl)
                                                                              {
-                                                            
                                                                               if (oscSender==nullptr) oscSender = std::make_unique<OSCSender>(); // localhost fallback
                                                                               if (oscSender!=nullptr){
-                                                                                                             OscMessageWrite msg;
-                                                                                                             msg.PushWord("/flux");
-                                                                                                             msg.PushFloatArg(pDialControl->GetValue(0));
-                                                                                                             msg.PushFloatArg(pDialControl->GetValue(1));
-                                                                                                             oscSender->SendOSCMessage(msg);
+                                                                                                       OscMessageWrite msg;
+                                                                                                       std::string stem = "/flux" + std::to_string(i);
+                                                                                                       msg.PushWord( stem.c_str() );
+                                                                                                       msg.PushFloatArg(pDialControl->GetValue(0));
+                                                                                                       msg.PushFloatArg(pDialControl->GetValue(1));
+                                                                                                       oscSender->SendOSCMessage(msg);
                                                                                                       }
                                                              
-                                                                              }
-                                                                            );
-                                                      }
-                                                     );
+                                                                              });
+                                                            }
+                                                        });
       }; //end layout lambda function
 }
     
@@ -223,7 +243,6 @@ void GlobSeqPlugIn::launchNetworkingThreads(){
                                                          slimeIPThread.detach();
                                                        }
                                                      }
-  
                                                    } //outer while loop close
                                              return false;  });
                                             });

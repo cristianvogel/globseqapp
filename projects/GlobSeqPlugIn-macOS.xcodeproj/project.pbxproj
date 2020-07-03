@@ -29,6 +29,7 @@
 		3E41A8DA24A5F92B00B27BA1 /* IPlugOSC_msg.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 4F5369C120C446430089212E /* IPlugOSC_msg.cpp */; };
 		3E41A8DB24A5F92C00B27BA1 /* IPlugOSC_msg.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 4F5369C120C446430089212E /* IPlugOSC_msg.cpp */; };
 		3E7EB53D24AE959C00DC8983 /* NELDoubleDial.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3E7EB53C24AE959C00DC8983 /* NELDoubleDial.cpp */; };
+		3E7EB54124AF87C200DC8983 /* Screenshot 2020-07-03 at 17.34.11.png in Resources */ = {isa = PBXBuildFile; fileRef = 3E7EB54024AF87C200DC8983 /* Screenshot 2020-07-03 at 17.34.11.png */; };
 		3EBBC988249D6DA500175D93 /* process_unix.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3EBBC96A249D6DA500175D93 /* process_unix.cpp */; };
 		3EBBC989249D6DA500175D93 /* process_unix.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3EBBC96A249D6DA500175D93 /* process_unix.cpp */; };
 		3EBBC98A249D6DA500175D93 /* process_unix.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3EBBC96A249D6DA500175D93 /* process_unix.cpp */; };
@@ -481,6 +482,7 @@
 /* Begin PBXFileReference section */
 		3E7EB53B24AE959C00DC8983 /* NELDoubleDial.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = NELDoubleDial.h; sourceTree = "<group>"; };
 		3E7EB53C24AE959C00DC8983 /* NELDoubleDial.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = NELDoubleDial.cpp; sourceTree = "<group>"; };
+		3E7EB54024AF87C200DC8983 /* Screenshot 2020-07-03 at 17.34.11.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "Screenshot 2020-07-03 at 17.34.11.png"; sourceTree = "<group>"; };
 		3EBBC96A249D6DA500175D93 /* process_unix.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = process_unix.cpp; sourceTree = "<group>"; };
 		3EBBC96B249D6DA500175D93 /* process.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = process.cpp; sourceTree = "<group>"; };
 		3EBBC96C249D6DA500175D93 /* LICENSE */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = LICENSE; sourceTree = "<group>"; };
@@ -988,6 +990,7 @@
 		089C167CFE841241C02AAC07 /* Resources */ = {
 			isa = PBXGroup;
 			children = (
+				3E7EB53E24AF878E00DC8983 /* graphics */,
 				4FC82B4620BD522B00722133 /* fonts */,
 				4FC82B4520BD522B00722133 /* img */,
 				4FA61F9922E8A96300A92C58 /* tex */,
@@ -1038,6 +1041,14 @@
 				4FDA600620B586AC00C49ABA /* GlobSeqPlugIn-mac.xcconfig */,
 			);
 			name = "Other Sources";
+			sourceTree = "<group>";
+		};
+		3E7EB53E24AF878E00DC8983 /* graphics */ = {
+			isa = PBXGroup;
+			children = (
+				3E7EB54024AF87C200DC8983 /* Screenshot 2020-07-03 at 17.34.11.png */,
+			);
+			path = graphics;
 			sourceTree = "<group>";
 		};
 		3EBBC969249D6DA500175D93 /* tiny-process */ = {
@@ -2196,6 +2207,7 @@
 				3EBBC98E249D6DA500175D93 /* LICENSE in Resources */,
 				4F78D88613B6382B0032E0F3 /* GlobSeqPlugIn.icns in Resources */,
 				3EBBC991249D6DA500175D93 /* README.md in Resources */,
+				3E7EB54124AF87C200DC8983 /* Screenshot 2020-07-03 at 17.34.11.png in Resources */,
 				4F1B4AE42014D33600BC64D4 /* GlobSeqPlugIn-macOS-MainMenu.xib in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
