@@ -6,3 +6,5 @@ https://www.cristianvogel.com/neverenginelabs/product/globseq
 
 ## GlobSeq: Global Sequencers and Kyma Scripting
 https://www.scribd.com/document/389533661/GlobSeq-and-Kyma-Scripting-by-Cristian-Vogel
+
+![Screenshot WIP](https://github.com/cristianvogel/globseqapp/blob/master/projects/graphics/Screenshot%202020-07-03%20at%2017.34.11.png)
