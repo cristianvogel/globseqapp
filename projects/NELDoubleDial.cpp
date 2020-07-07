@@ -9,7 +9,7 @@
 #include <algorithm>
 #include <iostream>
 
-void NELDoubleDial::Draw(IGraphics& g)  {
+void NELDoubleDial::Draw(IGraphics& g) {
 
   float radius;
   
@@ -24,10 +24,10 @@ void NELDoubleDial::Draw(IGraphics& g)  {
   
   float angle = mAngle1 + (static_cast<float>(GetValue(0)) * (mAngle2 - mAngle1));
  
-  IColor interpStage = IColor::LinearInterpolateBetween(COLOR_NEL_LUNADA_stop2, COLOR_NEL_LUNADA_stop3, static_cast<float>( fmin(1.0f, GetValue(0)*2.0f)) );
+  IColor interpStage = IColor::LinearInterpolateBetween(mColourStop2, mColourStop3, static_cast<float>( fmin(1.0f, GetValue(0)*2.0f)) );
   
   g.DrawCircle(COLOR_WHITE, cx, cy, radius,nullptr, 0.5f);
-  g.DrawArc(IColor::LinearInterpolateBetween(COLOR_NEL_LUNADA_stop1, interpStage, static_cast<float>(GetValue(0))),
+  g.DrawArc(IColor::LinearInterpolateBetween(mColourStop1, interpStage, static_cast<float>(GetValue(0))),
             cx, cy, radius,
             angle >= mAnchorAngle ? mAnchorAngle : mAnchorAngle - (mAnchorAngle - angle),
             angle >= mAnchorAngle ? angle : mAnchorAngle, &mBlend, mTrackSize);
@@ -36,7 +36,7 @@ void NELDoubleDial::Draw(IGraphics& g)  {
   angle = mAngle1 + (static_cast<float>(GetValue(1)) * (mAngle2 - mAngle1));
   
   g.DrawCircle(COLOR_GRAY, cx, cy, radius,nullptr, 0.5f);
-  g.DrawArc(IColor::LinearInterpolateBetween(COLOR_NEL_LUNADA_stop1, COLOR_NEL_LUNADA_stop2, static_cast<float>(GetValue(1))),
+  g.DrawArc(IColor::LinearInterpolateBetween(mColourStop1, mColourStop2, static_cast<float>(GetValue(1))),
              cx, cy, radius,
             angle >= mAnchorAngle ? mAnchorAngle : mAnchorAngle - (mAnchorAngle - angle),
             angle >= mAnchorAngle ? angle : mAnchorAngle, &mBlend, mTrackSize);
@@ -85,3 +85,12 @@ void NELDoubleDial::OnMouseWheel(float x, float y, const IMouseMod& mod, float d
   SetValue(GetValue(1) + gearing * d, 1);
   SetDirty();
 }
+
+/*
+void NELDoubleDial::setGradient( std::vector<const IColor&> s ) const {
+  
+  mColourStop1 = s.at(0);
+  mColourStop2 = s.at(1);
+  mColourStop3 = s.at(2);
+}
+*/

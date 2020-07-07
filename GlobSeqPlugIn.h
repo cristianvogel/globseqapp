@@ -4,47 +4,34 @@
 #include "IPlugOSC.h"
 #include "GlobSeqHelpers.h"
 #include "NELDoubleDial.h"
-
 #include <atomic>
 
 const int kNumPresets = 1;
 
+#define NBR_DUALDIALS 8
+
 enum EParams
 {
-  kFluxDial1 = 0,
-  kFluxDial2,
-  kFluxDial3,
-  kFluxDial4,
-  kFluxDial1Inner,
-  kFluxDial1Outer,
-  kFluxDial2Inner,
-  kFluxDial2Outer,
-  kFluxDial3Inner,
-  kFluxDial3Outer,
-  kFluxDial4Inner,
-  kFluxDial4Outer,
-  kNetstatus,
+  kNetstatus = 0,
   kReScan,
-  kNumParams
+  kDualDialInner,
+  kDualDialOuter = kDualDialInner + NBR_DUALDIALS,
+  kNumParams = kDualDialOuter + NBR_DUALDIALS
 };
 
 enum EControlTags
 {
-  kCtrlFluxDial1 = 0,
-  kCtrlFluxDial2,
-  kCtrlFluxDial3,
-  kCtrlFluxDial4,
-  kCtrlFluxDial1Inner,
-  kCtrlFluxDial1Outer,
-  kCtrlFluxDial2Inner,
-  kCtrlFluxDial2Outer,
-  kCtrlFluxDial3Inner,
-  kCtrlFluxDial3Outer,
-  kCtrlFluxDial4Inner,
-  kCtrlFluxDial4Outer,
-  kCtrlNetStatus,
+  kCtrlNetStatus = 0,
   kCtrlReScan,
-  kNumCtrlTags
+  kCtrlFluxDial,
+  kNumCtrlTags = kCtrlFluxDial + NBR_DUALDIALS
+};
+
+enum EControlDialTags
+{
+  kCtrlFluxDialInner = 0,
+  kCtrlFluxDialOuter = kCtrlFluxDialInner + NBR_DUALDIALS,
+  kNumCtrlFluxDials = kCtrlFluxDialOuter + NBR_DUALDIALS
 };
 
 enum EStatusMessages
@@ -53,10 +40,6 @@ enum EStatusMessages
   kMsgConnected,
   kNumStatusMessages
 };
-
-
-using namespace iplug;
-using namespace igraphics;
 
 class GlobSeqPlugIn final : public Plugin
 {
@@ -67,21 +50,18 @@ public:
   std::string beSlimeName = "";
   std::vector<std::string> cnsl =
   {
-    "⚇ BeSlime?",
+    "⚇ localhost",
     "⚉ "
   };
   std::string beSlimeIP = "⋯";
   std::string consoleText = "";
-
-  
   WDL_String senderNetworkInfo;
-
   std::unique_ptr<OSCSender> oscSender;
   std::atomic_bool beSlimeConnected {false};
-  std::mutex mtx;           // mutex for critical section
+  std::mutex mtx;           // mutex for critical section in network thread
   
   IText consoleFont;
-  GlobSeqHelpers* gsh = new GlobSeqHelpers();
+  std::unique_ptr<GlobSeqHelpers> gsh = std::make_unique<GlobSeqHelpers>();
   
 private:
   void launchNetworkingThreads();

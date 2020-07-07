@@ -6,14 +6,18 @@
 //
 #pragma once
 
-#include <stdio.h>
-#include <iostream>
-
-class GlobSeqHelpers
+class GlobSeqHelpers //: public iplug::OSCReciever
 {
 public:
   
-  std::string chomp(std::string &str);
+  GlobSeqHelpers() //: iplug::OSCReciever(8080)
+  {}
   
+  ~GlobSeqHelpers()
+  {}
+  
+  //virtual void OnOSCMessage(iplug::OscMessageRead& msg) override;
+ 
+  std::string chomp(std::string &str);
 };
 
